@@ -17,12 +17,12 @@ var drawControl = new L.Control.Draw({
             marker: false,
             circle: false,
             circlemarker: false,
-            rectangle: true }, // Only rectangle are a allowed to be drawn
+            rectangle: true }, // Only rectangle are  allowed to be drawn
     edit: { featureGroup: drawnItems }
 });
 map.addControl(drawControl);
 
-const Res_Sentinel_2 = 10.0; // Snetinel-2 resolution in m/pixel (each pixel is 10m2)
+const Res_Sentinel_2 = 10.0; // Sentinel-2 resolution in m/pixel (each pixel is 10m2)
 
 map.on(L.Draw.Event.CREATED, function (event) {
     var layer = event.layer;
@@ -35,7 +35,7 @@ map.on(L.Draw.Event.CREATED, function (event) {
 
     // Centralized function for displaying and logging errors
     function displayError(message, err = null) {
-        console.error(message, err);                   // Log to console for debugging
+        console.error(message, err); // Log to console for debugging
         if (resultsDiv) {
             resultsDiv.innerHTML = `<p style='color:red;'>${message}</p>`; // Displays in HTML if there is an error
         }
@@ -63,6 +63,7 @@ map.on(L.Draw.Event.CREATED, function (event) {
 
     var finalImageWidthPx = Math.round(rectWidthMeters / Res_Sentinel_2);
     var finalImageHeightPx = Math.round(rectHeightMeters / Res_Sentinel_2); // Transform rectangle height and width into pixels rather than meters
+    
     // Error if the selected zone is too small to pass through our alogrithm
     if (finalImageWidthPx < 64 || finalImageHeightPx < 64) {
         let message = `Zone selected too small (${finalImageWidthPx}px x ${finalImageHeightPx}px). Please select a bigger one.`;
