@@ -11,12 +11,12 @@ from flask_cors import CORS
 app = Flask(__name__, template_folder='Templates', static_folder='static')
 CORS(app)
 
-mon_model = keras.models.load_model("ModelCNN_WEBIA.keras")
+my_model = keras.models.load_model("ModelCNN_WEBIA.keras")
 
 IMG_SIZE = 64 
 
 
-# On défini une liste avec les noms des classes que le modèle prédit, elles correspondent à l'ordre de la sortie du modèle
+# We define a list of class names predicted by the model. Each class corresponds to an output index.
 class_names = [
     "AnnualCrop", "Forest", "HerbaceousVegetation", "Highway", "Industrial",
     "Pasture", "PermanentCrop", "Residential", "River", "SeaLake"
@@ -25,26 +25,26 @@ class_names = [
 
 
 def preprocess_tile(tile_img_pil):
-    # S'assurer que la tuile PIL est bien en mode RGB avant le resize
+    # We check is the PIL tile is  RBG beofre resizing it
     tile_img_pil_rgb = tile_img_pil.convert('RGB')
     
     img_resized = tile_img_pil_rgb.resize((IMG_SIZE, IMG_SIZE))
-    img_array = np.array(img_resized) / 255.0 # Normalisation
+    img_array = np.array(img_resized) / 255.0 # Normalization
     
-    # S'assurer que l'array numpy a 3 canaux (RGB)
-    # Cette vérification est une double sécurité après .convert('RGB') et np.array()
-    if img_array.ndim == 2:  # Image en niveaux de gris (ne devrait pas arriver après convert('RGB'))
+    # Make sure the numpy array has 3 channels (RGB)
+    # This is a double safety check after .convert(‘RGB’) and np.array()
+    if img_array.ndim == 2:  # Grayscale image (should not arrive after convert(‘RGB’))
         img_array = np.stack((img_array,) * 3, axis=-1)
-    elif img_array.shape[-1] == 1: # Autre forme de niveaux de gris
+    elif img_array.shape[-1] == 1: # Another form of grayscale
          img_array = np.concatenate([img_array]*3, axis=-1)
-    elif img_array.shape[-1] == 4:  # Image RGBA (ne devrait pas arriver après convert('RGB'))
+    elif img_array.shape[-1] == 4:  # RGBA image (should not arrive after convert(‘RGB’))
         img_array = img_array[:, :, :3]
     
-    # Vérifier que l'image a bien 3 canaux après tout traitement
+    # Check that the image has 3 channels after processing
     if img_array.shape[-1] != 3:
-        raise ValueError(f"L'image prétraitée doit avoir 3 canaux (RGB), mais en a {img_array.shape[-1]}.")
+        raise ValueError(f"The pre-processed image must have 3 channels (RGB), but has {img_array.shape[-1]}.")
 
-    # Ajouter la dimension du batch (Keras veut un batch d'images)
+    # Add batch size (Keras wants a batch of images)
     img_array = np.expand_dims(img_array, axis=0)
     return img_array
     
@@ -56,28 +56,28 @@ def predict_route():
     
     image_base64_string = data['image_base64']
 
-    # Décoder l'image base64
-    # Enlever le préfixe "data:image/png;base64," ou similaire si présent
+    # Decode base64 image
+    # Remove prefix “data:image/png;base64,” or similar if present
     if "," in image_base64_string:
         header, image_base64_string = image_base64_string.split(',', 1)
     
     img_bytes = base64.b64decode(image_base64_string)
-    pil_image = Image.open(io.BytesIO(img_bytes)).convert('RGB') # S'assurer qu'elle est en RGB
+    pil_image = Image.open(io.BytesIO(img_bytes)).convert('RGB') # Make sure it's RGB
 
-    # Diviser l'image en tuiles de 64 x 64 et prédire
+    # Divide the image into 64 x 64 tiles and predict
     img_width, img_height = pil_image.size
-    predictions_classes = [] # Stocke les noms des classes prédites
+    predictions_classes = [] # Stores predicted class names
 
-    # Calculer le nombre de tuiles complètes
+    # Calculate the number of complete tiles
     num_tiles_x = img_width // IMG_SIZE
     num_tiles_y = img_height // IMG_SIZE
     
     if num_tiles_x == 0 or num_tiles_y == 0:
-        return jsonify({"error": f"L'image fournie ({img_width}x{img_height}) est trop petite pour créer des tuiles de 64x64."}), 400
+        return jsonify({"error": f"The image supplied ({img_width}x{img_height}) is too small to create 64x64 tiles."}), 400
 
     for i in range(num_tiles_y): 
         for j in range(num_tiles_x):
-            # Coordonnées pour extraire la tuile
+            # Tile extraction coordinates
             left = j * IMG_SIZE
             top = i * IMG_SIZE
             right = left + IMG_SIZE
@@ -87,16 +87,16 @@ def predict_route():
             
             processed_tile_array = preprocess_tile(tile_pil)
 
-            # Prédiction
-            probs = mon_model.predict(processed_tile_array)[0]
+            # Prediction
+            probs = my_model.predict(processed_tile_array)[0]
             predicted_class_index = np.argmax(probs)
             predicted_class_name = class_names[predicted_class_index]
             predictions_classes.append(predicted_class_name)
 
     if not predictions_classes:
-        return jsonify({"error": "Aucune tuile complète n'a pu être traitée."}), 400
+        return jsonify({"error": "No complete tile could be processed."}), 400
 
-    # Agréger les résultats
+    # Aggregate results
     class_counts = Counter(predictions_classes)
     total_tiles_processed = len(predictions_classes)
     
