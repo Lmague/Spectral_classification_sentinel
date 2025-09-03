@@ -32,7 +32,7 @@ The CNN architecture used is a standard sequential model:
 
 - Convolutional layers (64 → 128 → 256 filters) with Batch Normalization and MaxPooling  
 - GlobalAveragePooling2D  
-- Dense(256, ReLU) + Dropout(0.3)  
+- Dense(256, ReLU) + Dropout(0.45)  
 - Dense(10, Softmax)
 
 ---
@@ -65,8 +65,18 @@ The application allows the user to select a rectangle on a Leaflet map and run c
 1. Clone this repository  
 2. Install dependencies:
 
+    With pip :
    ```bash
-   pip install -r requirements.txt
+    python -m venv vision; .\vision\Scripts\Activate.ps1
+    pip install --upgrade pip tensorflow numpy pillow flask flask-cors scikit-learn matplotlib seaborn ipykernel
+   ```
+
+   With conda :
+
+   ```bash
+    conda create -n vision
+    conda activate vision
+    conda install tensorflow numpy pillow flask flask-cors scikit-learn matplotlib seaborn ipykernel
    ```
 3. Train the model with the notebook (optional if you use the provided .keras model)
 4. Run the backend:
