@@ -1,52 +1,68 @@
 # EuroSAT CNN Classification Project
 
-This project's goal is to use Sentinel-2 data to determine the composition of a ground selection.  
-To do so, we use a CNN (Convolutional Neural Network) architecture for the neural network, HTML/CSS/JS for the frontend, and Python with Flask for the backend.
+This project's goal is to use Sentinel-2 satellite imagery to classify land use and land cover.
+To do so, we use a **Custom Light ResNet** (Convolutional Neural Network) architecture, HTML/CSS/JS for the frontend, and Python with Flask for the backend.
 
-My goal with this project was to learn more about computer vision and CNN architecture and logic. On top of that, it allowed me to link remote sensing and deep learning which are two topics that are important to me.
+My goal with this project was to learn more about computer vision, specifically **Residual Networks (ResNet)** and model optimization for CPU inference. It bridges the gap between remote sensing and deep learning, two fields I am passionate about.
 
 ---
 
 ## Project structure
 
-- `CNN_Training.ipynb` – Notebook used to train the CNN on EuroSAT dataset  
-- `CNN_Weights.keras` – Saved trained model  
-- `CNN_EuroSat.py` – Flask backend for inference  
-- `html_carte.html` – Web interface (Leaflet)  
-- `css_carte.css` – Stylesheet for the interface  
-- `js_carte.js` – Frontend logic (zone selection, sending image to backend)
+* `CNN_Training.ipynb` – Notebook used to train the ResNet model (includes Data Augmentation & TFLite conversion)
+* `eurosat_resnet_light.tflite` – Optimized quantized model for CPU inference (recommended)
+* `CNN_Weights.keras` – Saved full Keras model (for retraining)
+* `CNN_EuroSat.py` – Flask backend for inference
+* `html_carte.html` – Web interface (Leaflet)
+* `css_carte.css` – Stylesheet for the interface
+* `js_carte.js` – Frontend logic (zone selection, tiling, API calls)
 
 ---
 
 ## Dataset
 
-- **EuroSAT**: 27,000 RGB images (64×64 pixels) from Sentinel-2 satellite  
-- 10 land use and land cover classes: AnnualCrop, Forest, HerbaceousVegetation, Highway, Industrial, Pasture, PermanentCrop, Residential, River, SeaLake  
-- Available through [TensorFlow Datasets](https://www.tensorflow.org/datasets/catalog/eurosat)
+* **EuroSAT**: 27,000 RGB images (64×64 pixels) from Sentinel-2 satellite.
+* **10 Classes**: AnnualCrop, Forest, HerbaceousVegetation, Highway, Industrial, Pasture, PermanentCrop, Residential, River, SeaLake.
+* **Preprocessing**: Images are normalized ([0,1] range) and resized to ensure consistency.
+* **Source**: [TensorFlow Datasets](https://www.tensorflow.org/datasets/catalog/eurosat)
 
 ---
 
-## Model
+## Model Architecture: Light ResNet
 
-The CNN architecture used is a standard sequential model:
+Unlike standard sequential models, this project implements a custom **ResNet (Residual Network)** architecture to capture fine-grained textures.
 
-- Convolutional layers (64 → 128 → 256 filters) with Batch Normalization and MaxPooling  
-- GlobalAveragePooling2D  
-- Dense(256, ReLU) + Dropout(0.45)  
-- Dense(10, Softmax)
+**Key features:**
+
+* **Residual Blocks**: Uses skip connections to prevent the vanishing gradient problem and allow the model to learn deeper features.
+* **GELU Activation**: Used instead of ReLU for better convergence.
+* **Lightweight Design**:
+* Starts with **32 filters** (instead of the standard 64) to reduce computational cost.
+* Total parameters: **~700k** (vs 20M+ for standard ResNet50).
+
+
+* **Data Augmentation**: Integrated directly into the training pipeline (Random Flip, Rotation, Zoom, Contrast) to improve robustness and generalization.
 
 ---
 
-## Training results
+## Training & Results
 
-- Training accuracy: 0.9700
-- Validation accuracy: 0.9154
-- Test accuracy: 0.9267
-- Test loss: 0.3188
+The model was trained for 100 epochs with **EarlyStopping** and **LearningRateScheduler** to ensure stability.
 
-Learning curves (loss and accuracy):  
-![Training and validation curves](image/scores.png)
+* **Test Accuracy**: **96.85%**
+* **Test Loss**: 0.08816
 
+The introduction of Data Augmentation eliminated the overfitting observed in previous iterations, as shown by the convergence of training and validation curves.
+
+---
+
+## Optimization (CPU Inference)
+
+To ensure the web application runs smoothly on standard hardware (without a GPU), the model is converted to **TensorFlow Lite (TFLite)** with quantization:
+
+* **Format**: `.tflite`
+* **Optimization**: Dynamic Range Quantization
+* **Benefit**: Reduces model size by 4x and significantly speeds up inference time on CPUs, allowing for real-time classification of large map areas.
 
 ---
 
@@ -54,44 +70,49 @@ Learning curves (loss and accuracy):
 
 The application allows the user to select a rectangle on a Leaflet map and run classification on this area.
 
-1. The frontend captures the selected area, resizes it, and sends it to the backend as a base64-encoded image.  
-2. The backend (Flask API) tiles the image into 64×64 patches and runs predictions with the trained CNN.  
-3. The results are aggregated and displayed in the interface: dominant class and distribution of all classes.
+1. **Frontend**: Captures the selected geographical bounds.
+2. **Tiling**: The area is mathematically sliced into 64x64 pixel tiles corresponding to the Sentinel-2 resolution (~10m/px).
+3. **Inference**: The backend receives the batch of tiles and runs predictions using the optimized TFLite model.
+4. **Visualization**: Results are aggregated to display the dominant land cover and class distribution percentages.
 
 ---
 
 ## Installation
 
-1. Clone this repository  
+1. Clone this repository
 2. Install dependencies:
+**With pip:**
+```bash
+python -m venv vision
+# Windows:
+.\vision\Scripts\Activate.ps1
+# Mac/Linux:
+source vision/bin/activate
 
-    With pip :
-   ```bash
-    python -m venv vision; .\vision\Scripts\Activate.ps1
-    pip install --upgrade pip tensorflow numpy pillow flask flask-cors scikit-learn matplotlib seaborn ipykernel
-   ```
+pip install --upgrade pip tensorflow numpy pillow flask flask-cors scikit-learn matplotlib seaborn ipykernel
 
-   With conda :
+```
 
-   ```bash
-    conda create -n vision
-    conda activate vision
-    conda install tensorflow numpy pillow flask flask-cors scikit-learn matplotlib seaborn ipykernel
-   ```
-3. Train the model with the notebook (optional if you use the provided .keras model)
+
+3. **Inference Setup**:
+Ensure `eurosat_resnet_light.tflite` is in the root folder (generated by the notebook).
 4. Run the backend:
+```bash
+python CNN_EuroSat.py
 
-    ```bash
-    python CNN_EuroSat.py
-    ```
-5. Open the interface in your browser at http://localhost:5000/
+```
+
+
+5. Open the interface in your browser at `http://localhost:5000/`
+
+---
 
 ## Author
 
-This project was initially developed as a bonus for a final year undergraduate project. Since then, it has been developed as my understanding of CNNs and their optimization techniques has grown. It shows and take a step further my intereset in computer vision and remote sensing.
+This project started as an undergraduate final assignment and has evolved into a personal research project on Deep Learning optimization.
+Moving from a simple CNN to a ResNet architecture improved accuracy by nearly **5%**, while TFLite quantization made the tool usable in real-world web scenarios.
 
-## Limitations and Future Improvements
+## Future Improvements
 
-- The model has some difficulty accurately classifying urban and ocean tiles. This might be because these classes are underrepresented in the dataset or because the current architecture struggles to capture their unique features.
-- While several approaches have been explored to address this, a definitive solution hasn't been found yet.
-- Moving forward, the focus will be on improving the model's performance for these challenging classes and ensuring that the predictions in the web application are consistent with the reported accuracy metrics.
+* **Urban Differentiation**: Further improve distinction between "Highway" and "River" using texture-specific augmentation.
+* **Client-Side Inference**: Porting the TFLite model to **TensorFlow.js** to run predictions directly in the browser (removing the need for a Python backend).
