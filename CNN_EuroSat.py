@@ -11,7 +11,7 @@ from flask_cors import CORS
 app = Flask(__name__, template_folder='Templates', static_folder='static')
 CORS(app)
 
-my_model = keras.models.load_model("CNN_Weights.keras")
+my_model = keras.models.load_model("ModelCNN_WEBIA.keras")
 
 IMG_SIZE = 64 
 
@@ -147,4 +147,5 @@ def index():
     return render_template("html_carte.html")
 
 if __name__ == '__main__':
+
     app.run(debug=True, use_reloader=True)
