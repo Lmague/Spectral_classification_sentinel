@@ -9,13 +9,13 @@ My goal with this project was to learn more about computer vision, specifically 
 
 ## Project structure
 
-* `CNN_training.ipynb` – Notebook used to train the ResNet model (includes Data Augmentation)
-* `ModelCNN_WEBIA.keras` – Saved Keras model used for inference (generate it by running the notebook)
-* `CNN_EuroSat.py` – Flask backend for inference
-* `Templates/html_map.html` – Web interface (Leaflet)
-* `static/css_map.css` – Stylesheet for the interface
-* `static/js_map.js` – Frontend logic (zone selection, tiling, API calls)
-* `image/scores.png` – Training curves
+* `CNN_training.ipynb` - Notebook used to train the ResNet model (includes data augmentation)
+* `ModelCNN_WEBIA.keras` - Saved Keras model used for inference (generate it by running the notebook)
+* `CNN_EuroSat.py` - Flask backend for inference
+* `Templates/html_map.html` - Web interface (Leaflet)
+* `static/css_map.css` - Stylesheet for the interface
+* `static/js_map.js` - Frontend logic (zone selection, tiling, API calls)
+* `image/scores.png` - Training curves
 
 ---
 
@@ -23,36 +23,36 @@ My goal with this project was to learn more about computer vision, specifically 
 
 * **EuroSAT**: 27,000 RGB images (64×64 pixels) from Sentinel-2 satellite.
 * **10 Classes**: AnnualCrop, Forest, HerbaceousVegetation, Highway, Industrial, Pasture, PermanentCrop, Residential, River, SeaLake.
-* **Preprocessing**: Images are normalized ([0,1] range) and resized to ensure consistency.
+* **Preprocessing**: Images are normalized ([0,1] range) and resized so they all have the same size.
 * **Source**: [TensorFlow Datasets](https://www.tensorflow.org/datasets/catalog/eurosat)
 
 ---
 
 ## Model Architecture: Light ResNet
 
-Unlike standard sequential models, this project implements a custom **ResNet (Residual Network)** architecture to capture fine-grained textures.
+Unlike standard sequential models, this project uses a custom **ResNet (Residual Network)** to capture fine details.
 
 **Key features:**
 
-* **Residual Blocks**: Uses skip connections to prevent the vanishing gradient problem and allow the model to learn deeper features.
-* **GELU Activation**: Used instead of ReLU for better convergence.
+* **Residual Blocks**: Skip connections to avoid the vanishing gradient problem and let the model learn deeper features.
+* **GELU Activation**: Used instead of ReLU, it converges better here.
 * **Lightweight Design**:
-* Starts with **32 filters** (instead of the standard 64) to reduce computational cost.
-* Total parameters: **~700k** (vs 20M+ for standard ResNet50).
+* Starts with **32 filters** (instead of the usual 64) to keep the computational cost down.
+* Total parameters: **~700k** (vs 20M+ for a standard ResNet50).
 
 
-* **Data Augmentation**: Integrated directly into the training pipeline (Random Flip, Rotation, Zoom, Contrast) to improve robustness and generalization.
+* **Data Augmentation**: Added directly in the training pipeline (random flip, rotation, zoom, contrast) to help the model generalize better.
 
 ---
 
 ## Training & Results
 
-The model was trained for 100 epochs with **EarlyStopping** and **LearningRateScheduler** to ensure stability.
+The model was trained for 100 epochs with **EarlyStopping** and **LearningRateScheduler** to keep training stable.
 
 * **Test Accuracy**: **96.85%**
 * **Test Loss**: 0.08816
 
-The introduction of Data Augmentation eliminated the overfitting observed in previous iterations, as shown by the convergence of training and validation curves.
+Data augmentation removed the overfitting I had in earlier runs, and the training and validation curves now stay close to each other.
 
 ---
 
@@ -64,12 +64,12 @@ The web app doesn't need a GPU. The model is small (about 700k parameters) and t
 
 ## Web application
 
-The application allows the user to select a rectangle on a Leaflet map and run classification on this area.
+The application lets the user select a rectangle on a Leaflet map and run classification on this area.
 
 1. **Frontend**: Captures the selected geographical bounds.
-2. **Tiling**: The area is mathematically sliced into 64x64 pixel tiles corresponding to the Sentinel-2 resolution (~10m/px).
+2. **Tiling**: The area is split into 64x64 pixel tiles, matching the Sentinel-2 resolution (~10m/px).
 3. **Inference**: The backend receives the image and runs predictions on the tiles using the Keras model.
-4. **Visualization**: Results are aggregated to display the dominant land cover and class distribution percentages.
+4. **Visualization**: The results are aggregated to show the dominant land cover and the class distribution in percentages.
 
 ---
 
@@ -105,10 +105,9 @@ python CNN_EuroSat.py
 
 ## Author
 
-This project started as an undergraduate final assignment and has evolved into a personal research project on Deep Learning optimization.
-Moving from a simple CNN to a ResNet architecture improved accuracy by nearly **5%**, while TFLite quantization made the tool usable in real-world web scenarios.
+This project started as an undergraduate final assignment and turned into a personal project about Deep Learning optimization. Moving from a simple CNN to a ResNet improved the accuracy by nearly **5%**.
 
 ## Future Improvements
 
-* **Urban Differentiation**: Further improve distinction between "Highway" and "River" using texture-specific augmentation.
-* **Client-Side Inference**: Porting the model to **TensorFlow.js** to run predictions directly in the browser (removing the need for a Python backend).
+* **Urban Differentiation**: Better tell "Highway" and "River" apart using texture-specific augmentation.
+* **Client-Side Inference**: Port the model to **TensorFlow.js** so the predictions can run in the browser (no Python backend needed).
