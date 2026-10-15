@@ -74,22 +74,13 @@ def predict_route():
 
     # Divide the image into 64 x 64 tiles and predict
     img_width, img_height = pil_image.size
-    predictions_classes = [] # Stores predicted class names
-
-    # Calculate the number of complete tiles
-    num_tiles_x = img_width // IMG_SIZE
-    num_tiles_y = img_height // IMG_SIZE
-    
-    if num_tiles_x == 0 or num_tiles_y == 0:
-        return jsonify({"error": f"The image supplied ({img_width}x{img_height}) is too small to create 64x64 tiles."}), 400
-
-    # Tuilage avec recouvrement
-    predictions_classes = []
-    urban_probs = []
-    img_width, img_height = pil_image.size
 
     if img_width < IMG_SIZE or img_height < IMG_SIZE:
         return jsonify({"error": f"The image supplied ({img_width}x{img_height}) is too small to create 64x64 tiles."}), 400
+
+    # Tuilage avec recouvrement (stride < IMG_SIZE)
+    predictions_classes = []
+    urban_probs = []
 
     # itérations avec stride
     for top in range(0, img_height - IMG_SIZE + 1, STRIDE):
@@ -144,7 +135,7 @@ def predict_route():
 
 @app.route('/')
 def index():
-    return render_template("html_carte.html")
+    return render_template("html_map.html")
 
 if __name__ == '__main__':
 

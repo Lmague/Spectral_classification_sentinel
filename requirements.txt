@@ -1,0 +1,14 @@
+# Web app (backend)
+flask
+flask-cors
+
+# Model training / inference
+tensorflow
+numpy
+pillow
+
+# Training notebook
+scikit-learn
+matplotlib
+seaborn
+ipykernel
